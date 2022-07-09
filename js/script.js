@@ -12,10 +12,11 @@ const wrapper = document.querySelector(".wrapper"),
   showMoreBtn = wrapper.querySelector("#more-music"),
   hideMusicBtn = musicList.querySelector("#close");
 
-let musicIndex = 2;
+let musicIndex = Math.floor(Math.random() * allMusic.length + 1);
 
 window.addEventListener("load", () => {
   loadMusic(musicIndex);
+  playingNow();
 });
 
 function loadMusic(indexNumb) {
@@ -43,6 +44,7 @@ function nextMusic() {
   musicIndex > allMusic.length ? (musicIndex = 1) : (musicIndex = musicIndex);
   loadMusic(musicIndex);
   playMusic();
+  playingNow();
 }
 
 function prevMusic() {
@@ -50,11 +52,13 @@ function prevMusic() {
   musicIndex < 1 ? (musicIndex = allMusic.length) : (musicIndex = musicIndex);
   loadMusic(musicIndex);
   playMusic();
+  playingNow();
 }
 
 playPauseBtn.addEventListener("click", () => {
   const isMusicPaused = wrapper.classList.contains("paused");
   isMusicPaused ? pauseMusic() : playMusic();
+  playingNow();
 });
 
 nextBtn.addEventListener("click", () => {
@@ -148,6 +152,8 @@ mainAudio.addEventListener("ended", () => {
       musicIndex = randIndex; //passing randomIndex to musicIndex so the random song will play
       loadMusic(musicIndex); //calling loadMusic function
       playMusic(); //calling playMusic function
+      playingNow();
+
       break;
   }
 });
@@ -165,12 +171,14 @@ const ulTag = wrapper.querySelector("ul");
 //let's create li according to the array length
 for (i = 0; i < allMusic.length; i++) {
   //let's pass the song name,artist from the array to li
-  let liTag = ` <li>
+  let liTag = ` <li li-index="${i + 1}">
                 <div class="row">
                   <span>${allMusic[i].name}</span>
                   <p>${allMusic[i].artist}</p>
                 </div>
-                <audio class="${allMusic[i].src}" src="songs/${allMusic[i].src}.mp3"></audio>
+                <audio class="${allMusic[i].src}" src="songs/${
+    allMusic[i].src
+  }.mp3"></audio>
                 <span id="${allMusic[i].src}" class="audio-duration">3:40</span>
               </li>`;
 
@@ -180,7 +188,7 @@ for (i = 0; i < allMusic.length; i++) {
   let liAudioTag = ulTag.querySelector(`.${allMusic[i].src}`);
 
   liAudioTag.addEventListener("loadeddata", () => {
-    let audioDuration = mainAudio.duration;
+    let audioDuration = liAudioTag.duration;
     let totalMin = Math.floor(audioDuration / 60);
     let totalSec = Math.floor(audioDuration % 60);
 
@@ -190,12 +198,40 @@ for (i = 0; i < allMusic.length; i++) {
     }
 
     liAudioDuration.innerText = `${totalMin}:${totalSec}`;
+    //adding t-duration attribute which we'll use below
+    liAudioDuration.setAttribute("t-duration", `${totalMin}:${totalSec}`);
   });
 }
 
 //lets' work on play particular song on click
 const allLiTags = ulTag.querySelectorAll("li");
-for (let j = 0; j < allLiTags.length; j++) {
-  //adding onclick attribute in all li tags
-  allLiTags[i].setAttribute("onclick", "clicked(this)");
+function playingNow() {
+  for (let j = 0; j < allLiTags.length; j++) {
+    let audioTag = allLiTags[j].querySelector(".audio-duration");
+    //let's remove  playing class from all other li expect the last one which is clicked
+    if (allLiTags[j].classList.contains("playing")) {
+      allLiTags[j].classList.remove("playing");
+      //let's get that audio duration value and pass to .audio-duration innertext
+      let adDuration = audioTag.getAttribute("t-duration");
+      audioTag.innerText = adDuration; //passing t-duration value to audio  duration innerText
+    }
+    //if there is an li tag which li-index is equal to musicIndex
+    //then this music is playing now  and we'll style it
+    if (allLiTags[j].getAttribute("li-index") == musicIndex) {
+      allLiTags[j].classList.add("playing");
+      audioTag.innerText = "Playing";
+    }
+    //adding onclick attribute in all li tags
+    allLiTags[j].setAttribute("onclick", "clicked(this)");
+  }
+}
+
+//let's play song on li click
+function clicked(element) {
+  //getting li index of particular clicked li tag
+  let getLiIndex = element.getAttribute("li-index");
+  musicIndex = getLiIndex; //passing that li index to musicIndex
+  loadMusic(musicIndex);
+  playMusic();
+  playingNow();
 }
